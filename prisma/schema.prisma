@@ -1,0 +1,92 @@
+// 1. Generator: Tells Prisma to generate TypeScript types inside node_modules/@prisma/client
+generator client {
+  provider = "prisma-client-js"
+}
+//2.datasource: connect to postgresql
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// ==========================================
+//ENUM = allowed values
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum ResourceCategory {
+  MEETING_ROOM
+  EQUIPMENT
+  VEHICLE
+  WORKSPACE
+}
+
+enum ResourceStatus {
+  AVAILABLE
+  MAINTENANCE
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+// ==========================================
+//MODELS = Database tables
+
+//table 1 = users (Employees & admins)
+model User {
+  id          String          @id @default(uuid())
+  name        String
+  email       String          @unique
+  department  String
+  role        Role            @default(MEMBER)
+  createdAt   DateTime        @default(now()) @map("createdAt")
+
+  //one to many = One user can make many reservations
+  reservations Reservation[]
+
+  @@map("users") //name the actual table as users
+}
+
+//table 2 = Resources
+model Resource {
+  id           String          @id @default(uuid())
+  name         String
+  category     ResourceCategory
+  location     String
+  capacity     Int?
+  description String? 
+  status       ResourceStatus   @default(AVAILABLE)
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  //one to many =One resource can have many reservations over time
+  reservations Reservation[]
+
+  @@map("resources")
+}
+
+//table 3 =Reservation
+model Reservation {
+  id            String            @id @default(uuid())
+  title         String            
+  purpose       String?           
+  startTime     DateTime          @map("start_time")
+  endTime       DateTime          @map("end_time")
+  attendeeCount Int?              @map("attendee_count")
+  status        ReservationStatus @default(CONFIRMED)
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  // Foreign Keys connecting Reservation -> Resource and Reservation -> User
+  resourceId    String            @map("resource_id")
+  resource      Resource          @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  userId        String            @map("user_id")
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // COMPOSITE INDEX: Makes checking for overlapping reservations super fast!
+  @@index([resourceId, status, startTime, endTime])
+  @@map("reservations")
+}
