@@ -12,10 +12,6 @@ export function Footer({ isDatabaseConnected = true }: FooterProps) {
           <span className="font-semibold text-slate-700 block sm:inline">
             Resource Reservation Management System
           </span>
-          <span className="hidden sm:inline mx-2 text-slate-300">|</span>
-          <span className="text-[11px] text-slate-400 block sm:inline">
-            PrimeWave Lab Technical Assessment
-          </span>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs">
