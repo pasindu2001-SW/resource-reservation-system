@@ -5,8 +5,8 @@ This project is a full-stack resource booking application built with Next.js, Pr
 ## Deliverables
 
 - GitHub Repository: Complete application source code and documentation
-- Entity Relationship (ER) Diagram: Link to ER Diagram
-- Demonstration Video: Link to 3–5 min Video
+- Entity Relationship (ER) Diagram: [Link to ER Diagram](https://drive.google.com/file/d/1F5x32p-FLW47VnXVpZItWVARQpexAefX/view?usp=sharing)
+- Demonstration Video(Only the core feature explained): [Link to min Video](https://drive.google.com/file/d/12KsHRqxKnIzChzORMCn3xFg2vnU-8REi/view?usp=sharing)
 
 ## What I built
 
