@@ -1,44 +1,96 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User } from '@/types';
 
 interface UserContextType {
   currentUser: User | null;
-  setCurrentUser: (user: User) => void;
-  users: User[];
   isLoading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  register: (data: { name: string; email: string; password: string; department: string }) => Promise<{ success: boolean; message?: string }>;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadUsers() {
-      try {
-        const res = await fetch('/api/users');
-        const json = await res.json();
-        if (json.success && json.data.length > 0) {
-          setUsers(json.data);
-          // Default to the first member or Pasindu
-          const defaultUser = json.data.find((u: User) => u.name.includes('Pasindu')) || json.data[0];
-          setCurrentUser(defaultUser);
-        }
-      } catch (err) {
-        console.error('Failed to load users:', err);
-      } finally {
-        setIsLoading(false);
+  // Check existing session from /api/auth/me on load
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const json = await res.json();
+      if (json.success && json.user) {
+        setCurrentUser(json.user);
+      } else {
+        setCurrentUser(null);
       }
+    } catch (err) {
+      console.error('Session check failed:', err);
+      setCurrentUser(null);
+    } finally {
+      setIsLoading(false);
     }
-    loadUsers();
   }, []);
 
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
+
+  // Login handler
+  const login = async (email: string, password: string) => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        return { success: false, message: json.message || 'Login failed' };
+      }
+      setCurrentUser(json.user);
+      return { success: true };
+    } catch {
+      return { success: false, message: 'Network error during login' };
+    }
+  };
+
+  // Register handler (strictly MEMBER role)
+  const register = async (data: { name: string; email: string; password: string; department: string }) => {
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        return { success: false, message: json.message || 'Registration failed' };
+      }
+      setCurrentUser(json.user);
+      return { success: true };
+    } catch {
+      return { success: false, message: 'Network error during registration' };
+    }
+  };
+
+  // Logout handler
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setCurrentUser(null);
+    } catch (err) {
+      console.error('Logout error:', err);
+      setCurrentUser(null);
+    }
+  };
+
   return (
-    <UserContext.Provider value={{ currentUser, setCurrentUser, users, isLoading }}>
+    <UserContext.Provider value={{ currentUser, isLoading, login, register, logout, refreshUser }}>
       {children}
     </UserContext.Provider>
   );

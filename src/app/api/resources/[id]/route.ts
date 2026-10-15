@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ResourceService } from '@/services/resource.service';
 import { ResourceCategory, ResourceStatus } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 const updateResourceSchema = z.object({
@@ -60,6 +61,48 @@ export async function PATCH(
     console.error('Error updating resource:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to update resource' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/resources/:id (Admin delete with safeguard)
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    // Check for active upcoming reservations before deleting
+    const activeUpcomingReservations = await prisma.reservation.count({
+      where: {
+        resourceId: id,
+        status: 'CONFIRMED',
+        endTime: { gte: new Date() },
+      },
+    });
+
+    if (activeUpcomingReservations > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Cannot delete resource: It currently has ${activeUpcomingReservations} active upcoming reservation(s). Please cancel those reservations first, or set the resource to Maintenance.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Safe to delete
+    await prisma.resource.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, message: 'Resource deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting resource:', error);
+    return NextResponse.json(
+      { success: false, message: 'Failed to delete resource' },
       { status: 500 }
     );
   }

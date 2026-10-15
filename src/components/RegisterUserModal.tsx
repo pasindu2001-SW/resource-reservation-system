@@ -6,7 +6,6 @@ import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { Button } from './ui/Button';
 import { Role } from '@prisma/client';
-import { useUser } from '@/context/UserContext';
 
 interface RegisterUserModalProps {
   isOpen: boolean;
@@ -14,7 +13,6 @@ interface RegisterUserModalProps {
 }
 
 export function RegisterUserModal({ isOpen, onClose }: RegisterUserModalProps) {
-  const { setCurrentUser, users } = useUser();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [department, setDepartment] = useState('Engineering');
@@ -39,9 +37,6 @@ export function RegisterUserModal({ isOpen, onClose }: RegisterUserModalProps) {
         throw new Error(json.message || 'Failed to register user');
       }
 
-      // Add to user list and switch active user to newly created user
-      users.push(json.data);
-      setCurrentUser(json.data);
       setName('');
       setEmail('');
       onClose();
@@ -57,10 +52,10 @@ export function RegisterUserModal({ isOpen, onClose }: RegisterUserModalProps) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Register New Organization Member">
+    <Modal isOpen={isOpen} onClose={onClose} title="Add New Organization Member">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="p-3 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-medium">
+          <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
             {error}
           </div>
         )}
@@ -105,12 +100,12 @@ export function RegisterUserModal({ isOpen, onClose }: RegisterUserModalProps) {
           ]}
         />
 
-        <div className="flex justify-end space-x-3 pt-3 border-t border-slate-800">
+        <div className="flex justify-end space-x-2 pt-3 border-t border-slate-200">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
           <Button type="submit" variant="primary" isLoading={isLoading}>
-            Register Member
+            Add Member
           </Button>
         </div>
       </form>

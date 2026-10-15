@@ -1,30 +1,39 @@
 import { PrismaClient, Role, ResourceCategory, ResourceStatus, ReservationStatus } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Starting database seeding...');
+  console.log('🌱 Starting database seeding with secure hashed passwords...');
 
-  // 1. Clean existing records in reverse dependency order (to avoid foreign key constraint errors)
+  // Clean existing records
   await prisma.reservation.deleteMany();
   await prisma.resource.deleteMany();
   await prisma.user.deleteMany();
 
-  // 2. Seed Users
-  console.log('Creating users across departments...');
+  // Hash standard demo passwords
+  const adminPassword = await bcrypt.hash('Admin@123', 10);
+  const memberPassword = await bcrypt.hash('Member@123', 10);
+
+  // 1. Seed Admin User
+  console.log('Creating Admin account...');
   const adminUser = await prisma.user.create({
     data: {
       name: 'Sarah Jenkins',
       email: 'sarah.admin@org.com',
+      password: adminPassword,
       department: 'Operations',
       role: Role.ADMIN,
     },
   });
 
+  // 2. Seed Team Members (Normal Users)
+  console.log('Creating Team Member accounts...');
   const devUser = await prisma.user.create({
     data: {
       name: 'Pasindu Balasuriya',
       email: 'pasindu.dev@org.com',
+      password: memberPassword,
       department: 'Engineering',
       role: Role.MEMBER,
     },
@@ -34,6 +43,7 @@ async function main() {
     data: {
       name: 'Alex Rivera',
       email: 'alex.pm@org.com',
+      password: memberPassword,
       department: 'Product',
       role: Role.MEMBER,
     },
@@ -43,12 +53,13 @@ async function main() {
     data: {
       name: 'Elena Rostova',
       email: 'elena.mkt@org.com',
+      password: memberPassword,
       department: 'Marketing',
       role: Role.MEMBER,
     },
   });
 
-  // 3. Seed Resources (Meeting Rooms, Equipment, Vehicles, Workspaces)
+  // 3. Seed Resources
   console.log('Creating shared organization resources...');
   const boardroom = await prisma.resource.create({
     data: {
@@ -56,7 +67,7 @@ async function main() {
       category: ResourceCategory.MEETING_ROOM,
       location: 'Floor 3 - Executive Wing',
       capacity: 16,
-      description: 'Main executive boardroom with dual 4K displays, conferencing mic, and whiteboard.',
+      description: 'Executive boardroom with dual displays, conferencing mic, and whiteboard.',
       status: ResourceStatus.AVAILABLE,
     },
   });
@@ -77,8 +88,8 @@ async function main() {
       name: 'Portable 4K Laser Projector',
       category: ResourceCategory.EQUIPMENT,
       location: 'IT Equipment Locker #4',
-      capacity: null, // Equipment does not have seat capacity
-      description: 'High-lumen portable laser projector with wireless HDMI casting kit.',
+      capacity: null,
+      description: 'High-lumen portable laser projector with wireless casting kit.',
       status: ResourceStatus.AVAILABLE,
     },
   });
@@ -89,7 +100,7 @@ async function main() {
       category: ResourceCategory.VEHICLE,
       location: 'Basement Parking Bay B-12',
       capacity: 10,
-      description: 'Organization shuttle van for client visits and team events.',
+      description: 'Organization shuttle van for client visits and events.',
       status: ResourceStatus.AVAILABLE,
     },
   });
@@ -101,25 +112,23 @@ async function main() {
       location: 'Floor 1 - Reception',
       capacity: 8,
       description: 'Currently undergoing AC maintenance and repainting.',
-      status: ResourceStatus.MAINTENANCE, // Demonstrates operational safeguard!
+      status: ResourceStatus.MAINTENANCE,
     },
   });
 
-  // 4. Seed Existing Sample Reservations (To demonstrate schedule & conflict checking)
+  // 4. Seed Reservations
   console.log('Creating sample reservations...');
-  
-  // Calculate relative timestamps for today
   const today = new Date();
-  const slot1Start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0, 0); // Today 10:00 AM
-  const slot1End = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 11, 30, 0);   // Today 11:30 AM
+  const slot1Start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0, 0);
+  const slot1End = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 11, 30, 0);
 
-  const slot2Start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 14, 0, 0); // Today 2:00 PM
-  const slot2End = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 15, 0, 0);   // Today 3:00 PM
+  const slot2Start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 13, 0, 0);
+  const slot2End = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 14, 0, 0);
 
   await prisma.reservation.create({
     data: {
       title: 'Sprint Planning & Backlog Grooming',
-      purpose: 'Bi-weekly sprint kick-off with the core development team.',
+      purpose: 'Bi-weekly sprint kick-off with engineering.',
       startTime: slot1Start,
       endTime: slot1End,
       attendeeCount: 12,
@@ -142,12 +151,12 @@ async function main() {
     },
   });
 
-  console.log('Database seeded successfully!');
+  console.log('✅ Database seeded with hashed passwords successfully!');
 }
 
 main()
   .catch((e) => {
-    console.error('Seeding error:', e);
+    console.error('❌ Seeding error:', e);
     process.exit(1);
   })
   .finally(async () => {

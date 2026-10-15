@@ -1,24 +1,40 @@
 import React from 'react';
 
-export function Footer() {
+interface FooterProps {
+  isDatabaseConnected?: boolean;
+}
+
+export function Footer({ isDatabaseConnected = true }: FooterProps) {
   return (
-    <footer className="border-t border-slate-800 bg-slate-950 text-slate-400 py-8 mt-16 text-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+    <footer className="border-t border-slate-200 bg-white text-slate-500 py-5 mt-auto text-xs">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
         <div>
-          <p className="font-semibold text-slate-200">
+          <span className="font-semibold text-slate-700 block sm:inline">
             Resource Reservation Management System
-          </p>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Technical Assessment for PrimeWave Lab (Pvt) Ltd · Built with Next.js & PostgreSQL
-          </p>
-        </div>
-        <div className="flex items-center space-x-6 text-xs text-slate-400">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Database: Connected (PostgreSQL)
           </span>
-          <span>Prisma ORM</span>
-          <span>TypeScript</span>
+          <span className="hidden sm:inline mx-2 text-slate-300">|</span>
+          <span className="text-[11px] text-slate-400 block sm:inline">
+            PrimeWave Lab Technical Assessment
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs">
+          {/* Dynamic Database Status Badge */}
+          <span className="flex items-center gap-1.5 font-medium">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isDatabaseConnected ? 'bg-emerald-500' : 'bg-red-500'
+              }`}
+            />
+            <span className={isDatabaseConnected ? 'text-slate-700' : 'text-red-600'}>
+              {isDatabaseConnected ? 'PostgreSQL: Connected' : 'PostgreSQL: Offline'}
+            </span>
+          </span>
+
+          <span className="hidden xs:inline text-slate-300">·</span>
+          <span className="text-slate-500">Prisma ORM</span>
+          <span className="hidden xs:inline text-slate-300">·</span>
+          <span className="text-slate-500">Next.js App Router</span>
         </div>
       </div>
     </footer>

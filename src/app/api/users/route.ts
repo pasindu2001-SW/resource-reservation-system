@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
 const createUserSchema = z.object({
@@ -8,6 +9,7 @@ const createUserSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   department: z.string().min(2, 'Department is required'),
   role: z.nativeEnum(Role).default(Role.MEMBER),
+  password: z.string().min(6).optional(),
 });
 
 // GET /api/users - List all users
@@ -26,15 +28,14 @@ export async function GET() {
   }
 }
 
-// POST /api/users - Register a new member
+// POST /api/users - Admin adds a new member
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const validated = createUserSchema.parse(body);
 
-    // Check if email already exists
     const existing = await prisma.user.findUnique({
-      where: { email: validated.email },
+      where: { email: validated.email.toLowerCase() },
     });
 
     if (existing) {
@@ -44,8 +45,18 @@ export async function POST(request: Request) {
       );
     }
 
+    // Hash default or provided password
+    const rawPassword = validated.password || 'Member@123';
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
+
     const newUser = await prisma.user.create({
-      data: validated,
+      data: {
+        name: validated.name,
+        email: validated.email.toLowerCase(),
+        password: hashedPassword,
+        department: validated.department,
+        role: validated.role,
+      },
     });
 
     return NextResponse.json({ success: true, data: newUser }, { status: 201 });
